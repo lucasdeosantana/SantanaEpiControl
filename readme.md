@@ -1,16 +1,3 @@
-Perfeito. Vou estruturar **um guia de desenvolvimento em Markdown**, com **escopo fechado**, dividido em:
-
-* arquitetura geral
-* módulos do backend
-* módulos do frontend
-* estrutura do banco
-* fluxo de dados
-* ordem de implementação
-
-Sem tecnologia específica, para você decidir depois.
-
----
-
 # Sistema de Controle de Entrega de EPI com Auditoria Criptográfica
 
 ## Objetivo
@@ -1045,3 +1032,4 @@ Sistema capaz de:
 Se quiser, posso também montar **uma segunda versão desse markdown**, mas em **formato de checklist de desenvolvimento (estilo GitHub project)**.
 
 Isso ajuda muito quando você vai **construir o sistema iterativamente com IA**, porque cada item vira um prompt de desenvolvimento.
+
