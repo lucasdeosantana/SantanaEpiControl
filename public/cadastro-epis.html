@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SantanaEpiControl - Cadastro de EPIs</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success shadow-sm">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/dashboard.html">
+                <i class="bi bi-shield-check me-2"></i>SantanaEpiControl
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard.html">
+                            <i class="bi bi-speedometer2 me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/cadastro-colaboradores.html">
+                            <i class="bi bi-people me-1"></i>Colaboradores
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#">
+                            <i class="bi bi-shield me-1"></i>EPIs
+                        </a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="bi bi-person-circle me-1"></i>
+                            <span id="userName">Usuário</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-warning" href="#" id="logoutBtn">
+                            <i class="bi bi-box-arrow-right me-1"></i>Sair
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Conteúdo Principal -->
+    <div class="container-fluid py-4">
+        <div class="row mb-4">
+            <div class="col">
+                <h2 class="text-success">
+                    <i class="bi bi-shield me-2"></i>Cadastro de EPIs
+                </h2>
+                <p class="text-muted">Gerencie os Equipamentos de Proteção Individual</p>
+            </div>
+        </div>
+
+        <!-- Abas -->
+        <ul class="nav nav-tabs mb-4" id="epiTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="cadastro-tab" data-bs-toggle="tab" data-bs-target="#cadastro" type="button">
+                    <i class="bi bi-shield-plus me-1"></i>Novo EPI
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="lista-tab" data-bs-toggle="tab" data-bs-target="#lista" type="button">
+                    <i class="bi bi-list-ul me-1"></i>Lista de EPIs
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+
+            <!-- Aba Cadastro -->
+            <div class="tab-pane fade show active" id="cadastro" role="tabpanel">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-shield-fill me-2 text-primary"></i>Dados do EPI
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="epiForm">
+                            <div class="row">
+
+                                <div class="col-md-6 mb-3">
+                                    <label for="codigo" class="form-label">Código *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-primary text-white"><i class="bi bi-hash"></i></span>
+                                        <input type="text" class="form-control" id="codigo" required>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label for="descricao" class="form-label">Descrição *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-primary text-white"><i class="bi bi-card-text"></i></span>
+                                        <input type="text" class="form-control" id="descricao" required>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label for="ca" class="form-label">Certificado de Aprovação (CA)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-primary text-white"><i class="bi bi-award"></i></span>
+                                        <input type="text" class="form-control" id="ca">
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label for="fabricante" class="form-label">Fabricante *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-primary text-white"><i class="bi bi-building"></i></span>
+                                        <input type="text" class="form-control" id="fabricante" required>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label for="tipo" class="form-label">Tipo *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-primary text-white"><i class="bi bi-tag"></i></span>
+                                        <select class="form-select" id="tipo" required>
+                                            <option value="">Selecione um tipo</option>
+                                            <option value="Proteção Facial">Proteção Facial</option>
+                                            <option value="Proteção Auditiva">Proteção Auditiva</option>
+                                            <option value="Proteção Respiratória">Proteção Respiratória</option>
+                                            <option value="Proteção das Mãos">Proteção das Mãos</option>
+                                            <option value="Proteção dos Pés">Proteção dos Pés</option>
+                                            <option value="Proteção do Corpo">Proteção do Corpo</option>
+                                            <option value="Proteção da Cabeça">Proteção da Cabeça</option>
+                                            <option value="Proteção Visual">Proteção Visual</option>
+                                            <option value="Proteção de Queda">Proteção de Queda</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Upload de Imagem -->
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Imagem do EPI</label>
+                                    <div class="upload-area" id="uploadArea">
+                                        <input type="file" id="imagemUpload" accept="image/*" class="d-none">
+                                        <div id="uploadPlaceholder" class="text-center py-3">
+                                            <i class="bi bi-cloud-upload fs-2 text-muted"></i>
+                                            <p class="mb-1 text-muted">Clique ou arraste uma imagem aqui</p>
+                                            <small class="text-muted">JPG, PNG, GIF — máx. 5MB</small>
+                                        </div>
+                                        <div id="uploadPreview" class="d-none text-center py-2">
+                                            <img id="previewImg" src="" alt="Preview" class="img-thumbnail mb-2" style="max-height:140px;">
+                                            <br>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" id="removerImagem">
+                                                <i class="bi bi-trash me-1"></i>Remover
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-12 mb-3">
+                                    <label for="observacao" class="form-label">Observação</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-primary text-white"><i class="bi bi-chat"></i></span>
+                                        <textarea class="form-control" id="observacao" rows="3" placeholder="Informações adicionais sobre o EPI..."></textarea>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <div class="d-flex justify-content-between mt-4">
+                                <button type="reset" class="btn btn-outline-secondary" id="limparBtn">
+                                    <i class="bi bi-x-circle me-1"></i>Limpar
+                                </button>
+                                <button type="submit" class="btn btn-success" id="salvarBtn">
+                                    <span class="spinner-border spinner-border-sm d-none" id="salvarSpinner"></span>
+                                    <span id="salvarTexto"><i class="bi bi-save me-1"></i>Salvar EPI</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aba Lista -->
+            <div class="tab-pane fade" id="lista" role="tabpanel">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <h5 class="mb-0">
+                            <i class="bi bi-shield-fill me-2 text-success"></i>Lista de EPIs
+                        </h5>
+                        <div class="d-flex gap-2">
+                            <div class="input-group" style="max-width:300px;">
+                                <span class="input-group-text bg-success text-white"><i class="bi bi-search"></i></span>
+                                <input type="text" class="form-control" id="buscaEpi" placeholder="Buscar por código, descrição...">
+                            </div>
+                            <button class="btn btn-outline-success" onclick="carregarEpis()">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width:80px;">Imagem</th>
+                                        <th>Código</th>
+                                        <th>Descrição</th>
+                                        <th>CA</th>
+                                        <th>Fabricante</th>
+                                        <th>Tipo</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="episTableBody">
+                                    <tr>
+                                        <td colspan="7" class="text-center py-4">
+                                            <div class="spinner-border text-success"></div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="p-3">
+                            <nav><ul class="pagination justify-content-center mb-0" id="paginacao"></ul></nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Modal Editar EPI -->
+    <div class="modal fade" id="editarModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-pencil-square me-2"></i>Editar EPI
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editarEpiForm">
+                        <input type="hidden" id="editarId">
+                        <input type="hidden" id="editarImagemAtual">
+                        <div class="row">
+
+                            <div class="col-md-6 mb-3">
+                                <label for="editarCodigo" class="form-label">Código *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-primary text-white"><i class="bi bi-hash"></i></span>
+                                    <input type="text" class="form-control" id="editarCodigo" required>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="editarDescricao" class="form-label">Descrição *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-primary text-white"><i class="bi bi-card-text"></i></span>
+                                    <input type="text" class="form-control" id="editarDescricao" required>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="editarCa" class="form-label">Certificado de Aprovação (CA)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-primary text-white"><i class="bi bi-award"></i></span>
+                                    <input type="text" class="form-control" id="editarCa">
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="editarFabricante" class="form-label">Fabricante *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-primary text-white"><i class="bi bi-building"></i></span>
+                                    <input type="text" class="form-control" id="editarFabricante" required>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="editarTipo" class="form-label">Tipo *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-primary text-white"><i class="bi bi-tag"></i></span>
+                                    <select class="form-select" id="editarTipo" required>
+                                        <option value="">Selecione um tipo</option>
+                                        <option value="Proteção Facial">Proteção Facial</option>
+                                        <option value="Proteção Auditiva">Proteção Auditiva</option>
+                                        <option value="Proteção Respiratória">Proteção Respiratória</option>
+                                        <option value="Proteção das Mãos">Proteção das Mãos</option>
+                                        <option value="Proteção dos Pés">Proteção dos Pés</option>
+                                        <option value="Proteção do Corpo">Proteção do Corpo</option>
+                                        <option value="Proteção da Cabeça">Proteção da Cabeça</option>
+                                        <option value="Proteção Visual">Proteção Visual</option>
+                                        <option value="Proteção de Queda">Proteção de Queda</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Upload de Imagem na Edição -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Imagem do EPI</label>
+                                <div class="upload-area" id="editarUploadArea">
+                                    <input type="file" id="editarImagemUpload" accept="image/*" class="d-none">
+                                    <div id="editarUploadPreview" class="text-center py-2">
+                                        <img id="editarPreviewImg" src="" alt="Imagem atual"
+                                            class="img-thumbnail mb-2" style="max-height:140px; cursor:pointer;"
+                                            title="Clique para trocar a imagem">
+                                        <br>
+                                        <small class="text-muted">Clique na imagem para trocar</small>
+                                    </div>
+                                    <div id="editarUploadPlaceholder" class="d-none text-center py-3">
+                                        <i class="bi bi-cloud-upload fs-2 text-muted"></i>
+                                        <p class="mb-1 text-muted">Clique ou arraste uma imagem aqui</p>
+                                        <small class="text-muted">JPG, PNG, GIF — máx. 5MB</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12 mb-3">
+                                <label for="editarObservacao" class="form-label">Observação</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-primary text-white"><i class="bi bi-chat"></i></span>
+                                    <textarea class="form-control" id="editarObservacao" rows="3"></textarea>
+                                </div>
+                            </div>
+
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" id="salvarEdicaoBtn">
+                        <span class="spinner-border spinner-border-sm d-none" id="edicaoSpinner"></span>
+                        <span id="edicaoTexto"><i class="bi bi-save me-1"></i>Salvar Alterações</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Confirmar Exclusão -->
+    <div class="modal fade" id="excluirModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-exclamation-triangle me-2"></i>Confirmar Exclusão
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Você está prestes a <strong>EXCLUIR</strong> o seguinte EPI:</p>
+                    <div class="alert alert-danger d-flex align-items-center gap-3">
+                        <img id="excluirImagemEpi" src="" alt="" class="rounded" style="width:50px;height:50px;object-fit:cover;">
+                        <div>
+                            <h6 class="mb-0" id="excluirNomeEpi"></h6>
+                            <small class="text-muted">Código: <span id="excluirCodigoEpi"></span></small>
+                        </div>
+                    </div>
+                    <p class="mb-0">Esta ação é <strong>irreversível</strong>. Deseja continuar?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-danger" id="confirmarExclusaoBtn">
+                        <span class="spinner-border spinner-border-sm d-none" id="exclusaoSpinner"></span>
+                        <span id="exclusaoTexto"><i class="bi bi-trash me-1"></i>Excluir EPI</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Visualizar EPI -->
+    <div class="modal fade" id="visualizarModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-eye me-2"></i>Detalhes do EPI
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img id="vizImg" src="" alt="Imagem EPI" class="img-fluid rounded mb-3" style="max-height:220px;">
+                    <h5 id="vizDescricao"></h5>
+                    <p class="text-muted mb-1"><strong>Código:</strong> <span id="vizCodigo"></span></p>
+                    <p class="text-muted mb-1"><strong>CA:</strong> <span id="vizCa"></span></p>
+                    <p class="text-muted mb-1"><strong>Fabricante:</strong> <span id="vizFabricante"></span></p>
+                    <p class="text-muted mb-1"><strong>Tipo:</strong> <span id="vizTipo"></span></p>
+                    <div id="vizObservacaoBox" class="alert alert-light text-start mt-3 d-none">
+                        <strong>Observação:</strong>
+                        <p class="mb-0" id="vizObservacao"></p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/epis.js"></script>
+</body>
+</html>

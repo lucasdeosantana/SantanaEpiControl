@@ -1,0 +1,223 @@
+// src/audit/audit.service.ts (atualizado)
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { EntityManager } from 'typeorm'
+import { AuditLog } from './audit-log.entity';
+import { DailyHashAudit } from './daily-hash.entity';
+import { DataSource, Repository, Between } from 'typeorm';
+import { createHash } from 'crypto';
+
+@Injectable()
+export class AuditService {
+  constructor(
+    @InjectRepository(AuditLog)
+    private auditRepo: Repository<AuditLog>,
+    @InjectRepository(DailyHashAudit)
+    private dailyHashRepo: Repository<DailyHashAudit>,
+    private dataSource: DataSource,
+  ) { }
+
+  /**
+   * Cria um log encadeado (hash anterior -> hash atual) de forma atômica.
+   */
+  async createLog(evento: string, dados: any, usuario: string, manager?: EntityManager): Promise<AuditLog> {
+    // Usa o manager passado OU cria uma nova transação própria
+    const executar = async (m: EntityManager) => {
+      const logRepo = m.getRepository(AuditLog);
+
+      const last = await logRepo.findOne({ where: {}, order: { id: 'DESC' } });
+
+      const hashAnterior = last?.hash_atual ?? '0';
+      const timestamp = new Date();
+      const dadosStr = JSON.stringify(dados);
+
+      // composição do input para o hash
+      const hashInput = `${hashAnterior}|${timestamp.toISOString()}|${evento}|${dadosStr}|${usuario}`;
+      const hashAtual = createHash('sha256').update(hashInput).digest('hex');
+
+      await logRepo.save({
+        evento,
+        dados: JSON.stringify(dados),
+        usuario,
+        hash_anterior: hashAnterior,
+        hash_atual: hashAtual,
+      });
+    };
+
+    // Se veio um manager externo, usa ele (mesma transação)
+    // Se não veio, cria uma transação própria
+    if (manager) {
+     return await  executar(manager);
+    } else {
+      return await this.dataSource.transaction(executar);
+    }
+  }
+
+  // listagem com paginação e filtros básicos
+  async findAll(options?: {
+    page?: number;
+    limit?: number;
+    evento?: string;
+    usuario?: string;
+  }) {
+    const page = Math.max(1, options?.page ?? 1);
+    const limit = Math.min(100, options?.limit ?? 20);
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (options?.evento) where.evento = options.evento;
+    if (options?.usuario) where.usuario = options.usuario;
+
+    const [items, total] = await this.auditRepo.findAndCount({
+      where,
+      order: { id: 'DESC' },
+      skip,
+      take: limit,
+    });
+
+    // parse dados JSON antes de retornar
+    const parsed = items.map(i => ({
+      ...i,
+      dados: (() => {
+        try { return JSON.parse(i.dados); } catch { return i.dados; }
+      })(),
+    }));
+
+    return {
+      items: parsed,
+      total,
+      page,
+      limit,
+    };
+  }
+
+  async findOne(id: number) {
+    const log = await this.auditRepo.findOne({ where: { id } });
+    if (!log) return null;
+    try { log.dados = JSON.parse(log.dados) as any; } catch { }
+    return log;
+  }
+
+  /**
+   * Função que roda todo dia à meia-noite para calcular o hash diário
+   * @param dataReferencia Data no formato 'YYYY-MM-DD' (opcional, padrão é ontem)
+   */
+  async generateDailyHash(dataReferencia?: string): Promise<DailyHashAudit> {
+    // Se não informar data, usa o dia anterior
+    const targetDate = dataReferencia
+      ? new Date(dataReferencia)
+      : new Date(new Date().setDate(new Date().getDate() - 1));
+
+    // Formato YYYY-MM-DD
+    const dateStr = targetDate.toISOString().split('T')[0];
+
+    // Verifica se já existe hash para essa data
+    const existing = await this.dailyHashRepo.findOne({
+      where: { data_referencia: dateStr }
+    });
+
+    if (existing) {
+      throw new Error(`Hash diário já gerado para ${dateStr}`);
+    }
+
+    // Busca todos os logs da data especificada
+    const startDate = new Date(targetDate);
+    startDate.setHours(0, 0, 0, 0);
+
+    const endDate = new Date(targetDate);
+    endDate.setHours(23, 59, 59, 999);
+
+    const logs = await this.auditRepo.find({
+      where: {
+        timestamp: Between(startDate, endDate),
+      },
+      order: { id: 'ASC' }, // Ordem importante para consistência
+    });
+
+    if (logs.length === 0) {
+      throw new Error(`Nenhum log encontrado para ${dateStr}`);
+    }
+
+    // Concatena todos os hashes dos logs do dia
+    const hashInput = logs.map(l => l.hash_atual).join('|');
+
+    // Gera hash SHA-256 do conjunto
+    const hashConsolidado = createHash('sha256')
+      .update(hashInput)
+      .digest('hex');
+
+    // Salva o hash diário
+    const dailyHash = this.dailyHashRepo.create({
+      data_referencia: dateStr,
+      hash_consolidado: hashConsolidado,
+      detalhes: `Processados ${logs.length} logs`,
+    });
+
+    return await this.dailyHashRepo.save(dailyHash);
+  }
+
+  /**
+   * Verifica a integridade de um dia específico comparando o hash armazenado
+   * com o hash recalculado dos logs atuais
+   */
+  async verifyDailyIntegrity(dataReferencia: string): Promise<{
+    isValid: boolean;
+    storedHash: string;
+    calculatedHash: string;
+    message: string;
+  }> {
+    // Busca o hash armazenado
+    const stored = await this.dailyHashRepo.findOne({
+      where: { data_referencia: dataReferencia }
+    });
+
+    if (!stored) {
+      return {
+        isValid: false,
+        storedHash: '',
+        calculatedHash: '',
+        message: 'Nenhum hash diário encontrado para essa data',
+      };
+    }
+
+    // Recalcula o hash com os logs atuais
+    const startDate = new Date(dataReferencia);
+    startDate.setHours(0, 0, 0, 0);
+
+    const endDate = new Date(dataReferencia);
+    endDate.setHours(23, 59, 59, 999);
+
+    const logs = await this.auditRepo.find({
+      where: {
+        timestamp: Between(startDate, endDate),
+      },
+      order: { id: 'ASC' },
+    });
+
+    if (logs.length === 0) {
+      return {
+        isValid: false,
+        storedHash: stored.hash_consolidado,
+        calculatedHash: '',
+        message: 'Nenhum log encontrado para essa data',
+      };
+    }
+
+    // Recalcula o hash
+    const hashInput = logs.map(l => l.hash_atual).join('|');
+    const calculatedHash = createHash('sha256')
+      .update(hashInput)
+      .digest('hex');
+
+    const isValid = stored.hash_consolidado === calculatedHash;
+
+    return {
+      isValid,
+      storedHash: stored.hash_consolidado,
+      calculatedHash,
+      message: isValid
+        ? 'Integridade verificada com sucesso'
+        : 'Inconsistência detectada nos logs',
+    };
+  }
+}
