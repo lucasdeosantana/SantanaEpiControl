@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Entrega de EPI</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
+  <style>
+    body { background: #f0f2f5; }
+
+    .nav-tabs .nav-link { color: #6c757d; font-weight: 500; }
+    .nav-tabs .nav-link.active { color: #0d6efd; font-weight: 700; border-bottom: 3px solid #0d6efd; }
+
+    /* Carrinho */
+    #carrinho-box {
+      background: #fff;
+      border: 1.5px solid #cfe2ff;
+      border-radius: 14px;
+      min-height: 70px;
+      transition: all .3s;
+    }
+    .tag-selecionado {
+      background: #e7f1ff;
+      border: 1px solid #b6d4fe;
+      color: #084298;
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: .85rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .tag-selecionado .btn-remove {
+      background: none; border: none; padding: 0;
+      color: #084298; cursor: pointer; line-height: 1;
+    }
+
+    /* Accordion EPI */
+    .accordion-button:not(.collapsed) { background: #e7f1ff; color: #084298; font-weight: 700; }
+    .accordion-button { font-weight: 600; }
+
+    /* Card EPI */
+    .epi-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 4px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .epi-card:last-child { border-bottom: none; }
+    .epi-img {
+      width: 52px; height: 52px;
+      object-fit: cover;
+      border-radius: 8px;
+      background: #e9ecef;
+      flex-shrink: 0;
+    }
+    .epi-img-placeholder {
+      width: 52px; height: 52px;
+      border-radius: 8px;
+      background: #e9ecef;
+      display: flex; align-items: center; justify-content: center;
+      color: #adb5bd; font-size: 1.4rem;
+      flex-shrink: 0;
+    }
+    .qty-control {
+      display: flex; align-items: center; gap: 8px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 4px 8px;
+    }
+    .qty-control button {
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      border: none;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,.15);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background .2s;
+    }
+    .qty-control button:hover { background: #e7f1ff; }
+    .qty-control .qty-num { min-width: 24px; text-align: center; font-weight: 700; }
+
+    /* Modal Foto */
+    #video-container {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1;
+      background: #000;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    #video-container video,
+    #video-container img {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .overlay-circle {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 70%; height: 70%;
+      border: 3px dashed rgba(255,255,255,.6);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    #btn-shutter {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      border: 6px solid #0d6efd;
+      background: #fff;
+      cursor: pointer;
+      transition: transform .1s;
+      box-shadow: 0 4px 12px rgba(0,0,0,.2);
+    }
+    #btn-shutter:active { transform: scale(.92); }
+
+    /* Sucesso */
+    #tela-sucesso { display: none; }
+
+    /* Documentos */
+    .doc-badge-processing { background: #fff3cd; color: #856404; }
+    .doc-badge-created    { background: #cff4fc; color: #055160; }
+    .doc-badge-validated  { background: #d1e7dd; color: #0a3622; }
+    .doc-badge-error      { background: #f8d7da; color: #842029; }
+  </style>
+</head>
+<body>
+
+<div class="container py-4" style="max-width:720px">
+
+  <!-- Header -->
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <div class="bg-primary text-white rounded-3 p-2 fs-4"><i class="bi bi-shield-check"></i></div>
+    <div>
+      <h5 class="mb-0 fw-bold">Entrega de EPI</h5>
+      <small class="text-muted">Selecione os equipamentos e registre a retirada</small>
+    </div>
+  </div>
+
+  <!-- Abas -->
+  <ul class="nav nav-tabs mb-4" id="abas">
+    <li class="nav-item">
+      <button class="nav-link active" data-aba="nova-entrega">
+        <i class="bi bi-plus-circle me-1"></i> Nova Entrega
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-aba="documentos" onclick="carregarDocumentos()">
+        <i class="bi bi-file-earmark-text me-1"></i> Meus Documentos
+      </button>
+    </li>
+  </ul>
+
+  <!-- ═══════════════════════════════════════════════════════ ABA: NOVA ENTREGA -->
+  <div id="aba-nova-entrega">
+
+    <!-- Tela de Sucesso -->
+    <div id="tela-sucesso" class="text-center py-5">
+      <div class="text-success mb-3" style="font-size:4rem"><i class="bi bi-check-circle-fill"></i></div>
+      <h4 class="fw-bold">Entrega Registrada!</h4>
+      <p class="text-muted">Seu documento está sendo processado e será assinado digitalmente.</p>
+      <button class="btn btn-primary mt-2" onclick="resetarTudo()">
+        <i class="bi bi-arrow-counterclockwise me-1"></i> Nova Entrega
+      </button>
+    </div>
+
+    <!-- Tela Principal -->
+    <div id="tela-principal">
+
+      <!-- Carrinho -->
+      <div id="carrinho-box" class="p-3 mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="text-muted small fw-semibold text-uppercase">Itens Selecionados</span>
+          <span id="carrinho-count" class="badge bg-primary rounded-pill" style="display:none">0</span>
+        </div>
+        <div id="carrinho-tags">
+          <span class="text-muted fst-italic small">Nenhum EPI selecionado ainda...</span>
+        </div>
+        <div id="btn-continuar-wrap" style="display:none" class="mt-3">
+          <button class="btn btn-primary w-100 fw-bold py-2" onclick="abrirModalConfirmacao()">
+            <i class="bi bi-arrow-right-circle me-2"></i>Continuar para Validação
+          </button>
+        </div>
+      </div>
+
+      <!-- Accordions por Tipo -->
+      <div class="accordion" id="accordionEpis">
+        <div class="text-center py-4 text-muted" id="loading-epis">
+          <div class="spinner-border spinner-border-sm me-2"></div> Carregando EPIs...
+        </div>
+      </div>
+
+    </div><!-- /tela-principal -->
+  </div><!-- /aba-nova-entrega -->
+
+  <!-- ═══════════════════════════════════════════════════════ ABA: DOCUMENTOS -->
+  <div id="aba-documentos" style="display:none">
+    <div id="lista-documentos">
+      <div class="text-center py-5 text-muted">
+        <div class="spinner-border spinner-border-sm me-2"></div> Carregando documentos...
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+
+<!-- ═══════════════════════════════════════════════════════ MODAL CONFIRMAÇÃO -->
+<div class="modal fade" id="modalConfirmacao" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-4">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold">Confirmar Retirada</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted small mb-3">Revise os itens antes de prosseguir:</p>
+        <div id="lista-confirmacao" class="mb-3"></div>
+        <hr/>
+        <div class="d-flex justify-content-between fw-bold">
+          <span>Total de itens</span>
+          <span id="total-itens-modal">0</span>
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-primary fw-bold px-4" onclick="confirmarEAbrirFoto()">
+          <i class="bi bi-camera me-2"></i>Tirar Foto de Validação
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════ MODAL FOTO -->
+<div class="modal fade" id="modalFoto" tabindex="-1" data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-4">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold"><i class="bi bi-camera me-2"></i>Validação Facial</h5>
+      </div>
+      <div class="modal-body text-center">
+        <p class="text-muted small mb-3">Posicione seu rosto dentro do círculo e tire a foto.</p>
+
+        <div id="video-container" class="mb-3">
+          <video id="video" autoplay playsinline></video>
+          <div class="overlay-circle"></div>
+        </div>
+
+        <!-- Botão Shutter -->
+        <div id="wrap-shutter">
+          <button id="btn-shutter" onclick="tirarFoto()" title="Tirar foto"></button>
+          <p class="text-muted small mt-2">Clique para capturar</p>
+        </div>
+
+        <!-- Ações pós-foto -->
+        <div id="wrap-acoes-foto" style="display:none" class="d-flex gap-2 mt-2">
+          <button class="btn btn-outline-secondary flex-fill" onclick="repetirFoto()">
+            <i class="bi bi-arrow-counterclockwise me-1"></i>Repetir
+          </button>
+          <button class="btn btn-success flex-fill fw-bold" onclick="enviarEntrega()">
+            <i class="bi bi-check-circle me-1"></i>Confirmar e Enviar
+          </button>
+        </div>
+
+        <div id="wrap-enviando" style="display:none" class="py-3">
+          <div class="spinner-border text-primary mb-2"></div>
+          <p class="text-muted">Enviando entrega...</p>
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button class="btn btn-link text-muted" onclick="cancelarFoto()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CONFIGURAÇÃO — ajuste a URL base da sua API
+// ═══════════════════════════════════════════════════════════════════════════
+const API_BASE = '/api';
+const TOKEN = () => localStorage.getItem('token'); // JWT salvo no localStorage
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ESTADO
+// ═══════════════════════════════════════════════════════════════════════════
+let selecionados = {}; // { epiId: { epi, quantidade } }
+let fotoBlob = null;
+let streamAtivo = null;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ABAS
+// ═══════════════════════════════════════════════════════════════════════════
+document.querySelectorAll('[data-aba]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-aba]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('[id^="aba-"]').forEach(el => el.style.display = 'none');
+    document.getElementById('aba-' + btn.dataset.aba).style.display = '';
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CARREGAR EPIs DA API
+// ═══════════════════════════════════════════════════════════════════════════
+async function carregarEpis() {
+  try {
+    const res = await fetch(`${API_BASE}/epis`, {
+      headers: { Authorization: `Bearer ${TOKEN()}` }
+    });
+    const epis = await res.json();
+    renderizarAccordions(epis);
+  } catch (e) {
+    // Dados mock para desenvolvimento
+    const mock = [
+      { id:1, codigo:'EP001', descricao:'Capacete de Segurança', tipo:'Proteção da Cabeça', fabricante:'3M', ca:'12345', imagem:null },
+      { id:2, codigo:'EP002', descricao:'Capacete com Jugular', tipo:'Proteção da Cabeça', fabricante:'Vonder', ca:'12346', imagem:null },
+      { id:3, codigo:'EP003', descricao:'Óculos de Proteção', tipo:'Proteção dos Olhos', fabricante:'3M', ca:'23456', imagem:null },
+      { id:4, codigo:'EP004', descricao:'Protetor Facial', tipo:'Proteção dos Olhos', fabricante:'Carbografite', ca:'23457', imagem:null },
+      { id:5, codigo:'EP005', descricao:'Luva de Raspa', tipo:'Proteção das Mãos', fabricante:'Kalipso', ca:'34567', imagem:null },
+      { id:6, codigo:'EP006', descricao:'Luva Nitrílica', tipo:'Proteção das Mãos', fabricante:'Danny', ca:'34568', imagem:null },
+      { id:7, codigo:'EP007', descricao:'Botina de Segurança', tipo:'Proteção dos Pés', fabricante:'Marluvas', ca:'45678', imagem:null },
+      { id:8, codigo:'EP008', descricao:'Protetor Auricular', tipo:'Proteção Auditiva', fabricante:'3M', ca:'56789', imagem:null },
+    ];
+    renderizarAccordions(mock);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RENDERIZAR ACCORDIONS
+// ═══════════════════════════════════════════════════════════════════════════
+function renderizarAccordions(epis) {
+  const container = document.getElementById('accordionEpis');
+  document.getElementById('loading-epis').remove();
+
+  // Agrupar por tipo
+  const grupos = epis.reduce((acc, epi) => {
+    if (!acc[epi.tipo]) acc[epi.tipo] = [];
+    acc[epi.tipo].push(epi);
+    return acc;
+  }, {});
+
+  Object.entries(grupos).forEach(([tipo, lista], idx) => {
+    const id = `acc-${idx}`;
+    const div = document.createElement('div');
+    div.className = 'accordion-item mb-2 border rounded-3 overflow-hidden';
+    div.innerHTML = `
+      <h2 class="accordion-header">
+        <button class="accordion-button ${idx > 0 ? 'collapsed' : ''}" type="button"
+          data-bs-toggle="collapse" data-bs-target="#${id}">
+          <i class="bi bi-shield-fill-check me-2 text-primary"></i>
+          ${tipo}
+          <span class="badge bg-secondary ms-2">${lista.length}</span>
+        </button>
+      </h2>
+      <div id="${id}" class="accordion-collapse collapse ${idx === 0 ? 'show' : ''}" data-bs-parent="#accordionEpis">
+        <div class="accordion-body p-2">
+          ${lista.map(epi => renderEpiCard(epi)).join('')}
+        </div>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function renderEpiCard(epi) {
+  const img = epi.imagem
+    ? `<img src="${epi.imagem}" class="epi-img" alt="${epi.descricao}">`
+    : `<div class="epi-img-placeholder"><i class="bi bi-shield"></i></div>`;
+
+  return `
+    <div class="epi-card" id="card-${epi.id}">
+      ${img}
+      <div class="flex-grow-1">
+        <div class="fw-semibold">${epi.descricao}</div>
+        <div class="text-muted small">CA: ${epi.ca || 'N/A'} &bull; ${epi.fabricante}</div>
+        <div class="text-muted small text-uppercase" style="font-size:.7rem">${epi.codigo}</div>
+      </div>
+      <div class="qty-control">
+        <button onclick="alterarQtd(${JSON.stringify(epi).replace(/"/g,'&quot;')}, -1)">
+          <i class="bi bi-dash"></i>
+        </button>
+        <span class="qty-num" id="qty-${epi.id}">0</span>
+        <button onclick="alterarQtd(${JSON.stringify(epi).replace(/"/g,'&quot;')}, 1)" class="text-primary">
+          <i class="bi bi-plus"></i>
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CONTROLE DE QUANTIDADE
+// ═══════════════════════════════════════════════════════════════════════════
+function alterarQtd(epi, delta) {
+  const atual = selecionados[epi.id] ? selecionados[epi.id].quantidade : 0;
+  const nova = atual + delta;
+
+  if (nova <= 0) {
+    delete selecionados[epi.id];
+  } else {
+    selecionados[epi.id] = { epi, quantidade: nova };
+  }
+
+  document.getElementById(`qty-${epi.id}`).textContent = nova > 0 ? nova : 0;
+  atualizarCarrinho();
+}
+
+function atualizarCarrinho() {
+  const itens = Object.values(selecionados);
+  const tagsEl = document.getElementById('carrinho-tags');
+  const countEl = document.getElementById('carrinho-count');
+  const btnWrap = document.getElementById('btn-continuar-wrap');
+
+  if (itens.length === 0) {
+    tagsEl.innerHTML = '<span class="text-muted fst-italic small">Nenhum EPI selecionado ainda...</span>';
+    countEl.style.display = 'none';
+    btnWrap.style.display = 'none';
+    return;
+  }
+
+  countEl.textContent = itens.length;
+  countEl.style.display = '';
+  btnWrap.style.display = '';
+
+  tagsEl.innerHTML = itens.map(({ epi, quantidade }) => `
+    <span class="tag-selecionado me-1 mb-1">
+      <strong>${quantidade}x</strong> ${epi.descricao}
+      <button class="btn-remove" onclick="removerDoCarrinho(${epi.id})" title="Remover">
+        <i class="bi bi-x-circle-fill"></i>
+      </button>
+    </span>
+  `).join('');
+}
+
+function removerDoCarrinho(epiId) {
+  if (selecionados[epiId]) {
+    const qtd = selecionados[epiId].quantidade;
+    delete selecionados[epiId];
+    const el = document.getElementById(`qty-${epiId}`);
+    if (el) el.textContent = '0';
+    atualizarCarrinho();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MODAL CONFIRMAÇÃO
+// ═══════════════════════════════════════════════════════════════════════════
+function abrirModalConfirmacao() {
+  const itens = Object.values(selecionados);
+  const lista = document.getElementById('lista-confirmacao');
+  const total = itens.reduce((s, i) => s + i.quantidade, 0);
+
+  lista.innerHTML = itens.map(({ epi, quantidade }) => `
+    <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+      <div>
+        <div class="fw-semibold">${epi.descricao}</div>
+        <div class="text-muted small">${epi.fabricante} &bull; CA: ${epi.ca || 'N/A'}</div>
+      </div>
+      <span class="badge bg-primary rounded-pill fs-6">x${quantidade}</span>
+    </div>
+  `).join('');
+
+  document.getElementById('total-itens-modal').textContent = total;
+  new bootstrap.Modal('#modalConfirmacao').show();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MODAL FOTO
+// ═══════════════════════════════════════════════════════════════════════════
+async function confirmarEAbrirFoto() {
+  bootstrap.Modal.getInstance('#modalConfirmacao').hide();
+  await new Promise(r => setTimeout(r, 400));
+
+  // Reset estado da foto
+  fotoBlob = null;
+  document.getElementById('wrap-shutter').style.display = '';
+  document.getElementById('wrap-acoes-foto').style.display = 'none';
+  document.getElementById('wrap-enviando').style.display = 'none';
+
+  // Inicia câmera
+  const video = document.getElementById('video');
+  const container = document.getElementById('video-container');
+
+  // Remove preview anterior se houver
+  const imgPreview = container.querySelector('img');
+  if (imgPreview) imgPreview.remove();
+  video.style.display = '';
+
+  try {
+    streamAtivo = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 600, height: 600 } });
+    video.srcObject = streamAtivo;
+  } catch (e) {
+    alert('Não foi possível acessar a câmera. Verifique as permissões do navegador.');
+    return;
+  }
+
+  new bootstrap.Modal('#modalFoto').show();
+}
+
+function tirarFoto() {
+  const video = document.getElementById('video');
+  const container = document.getElementById('video-container');
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 600;
+  canvas.height = 600;
+  const ctx = canvas.getContext('2d');
+
+  // Centraliza e corta para 600x600
+  const vw = video.videoWidth, vh = video.videoHeight;
+  const lado = Math.min(vw, vh);
+  const ox = (vw - lado) / 2, oy = (vh - lado) / 2;
+  ctx.drawImage(video, ox, oy, lado, lado, 0, 0, 600, 600);
+
+  // Para o stream
+  pararStream();
+  video.style.display = 'none';
+
+  // Mostra preview
+  const img = document.createElement('img');
+  img.src = canvas.toDataURL('image/jpeg', 0.9);
+  container.appendChild(img);
+
+  // Converte para Blob
+  canvas.toBlob(blob => { fotoBlob = blob; }, 'image/jpeg', 0.9);
+
+  document.getElementById('wrap-shutter').style.display = 'none';
+  document.getElementById('wrap-acoes-foto').style.display = '';
+}
+
+function repetirFoto() {
+  fotoBlob = null;
+  const container = document.getElementById('video-container');
+  const img = container.querySelector('img');
+  if (img) img.remove();
+
+  const video = document.getElementById('video');
+  video.style.display = '';
+
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } }).then(stream => {
+    streamAtivo = stream;
+    video.srcObject = stream;
+  });
+
+  document.getElementById('wrap-shutter').style.display = '';
+  document.getElementById('wrap-acoes-foto').style.display = 'none';
+}
+
+function cancelarFoto() {
+  pararStream();
+  bootstrap.Modal.getInstance('#modalFoto').hide();
+}
+
+function pararStream() {
+  if (streamAtivo) {
+    streamAtivo.getTracks().forEach(t => t.stop());
+    streamAtivo = null;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ENVIAR ENTREGA
+// ═══════════════════════════════════════════════════════════════════════════
+async function enviarEntrega() {
+  if (!fotoBlob) { alert('Foto não capturada.'); return; }
+
+  document.getElementById('wrap-acoes-foto').style.display = 'none';
+  document.getElementById('wrap-enviando').style.display = '';
+
+  const itens = Object.values(selecionados);
+  const formData = new FormData();
+
+  // Ajuste o funcionario_id conforme seu contexto de autenticação
+  formData.append('funcionario_id', '1');
+  itens.forEach(({ epi }) => formData.append('epis_ids[]', epi.id));
+  formData.append('foto', fotoBlob, 'validacao.jpg');
+
+  try {
+    const res = await fetch(`${API_BASE}/entregas`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${TOKEN()}` },
+      body: formData,
+    });
+
+    if (!res.ok) throw new Error(await res.text());
+
+    bootstrap.Modal.getInstance('#modalFoto').hide();
+    pararStream();
+    mostrarSucesso();
+  } catch (e) {
+    document.getElementById('wrap-enviando').style.display = 'none';
+    document.getElementById('wrap-acoes-foto').style.display = '';
+    alert('Erro ao enviar: ' + e.message);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DOCUMENTOS
+// ═══════════════════════════════════════════════════════════════════════════
+async function carregarDocumentos() {
+  const container = document.getElementById('lista-documentos');
+  container.innerHTML = '<div class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm me-2"></div> Carregando...</div>';
+
+  try {
+    const res = await fetch(`${API_BASE}/entregas`, {
+      headers: { Authorization: `Bearer ${TOKEN()}` }
+    });
+    const docs = await res.json();
+    renderizarDocumentos(docs);
+  } catch (e) {
+    // Mock para desenvolvimento
+    renderizarDocumentos([
+      { id: 1, created_at: '2025-03-10T10:00:00Z', status: 'validated', funcionario: { nome: 'João Silva' }, epis: [{descricao:'Capacete'},{descricao:'Luva'}] },
+      { id: 2, created_at: '2025-03-15T14:30:00Z', status: 'created',   funcionario: { nome: 'João Silva' }, epis: [{descricao:'Óculos'}] },
+      { id: 3, created_at: '2025-03-20T09:00:00Z', status: 'processing', funcionario: { nome: 'João Silva' }, epis: [{descricao:'Botina'}] },
+    ]);
+  }
+}
+
+function renderizarDocumentos(docs) {
+  const container = document.getElementById('lista-documentos');
+
+  if (!docs.length) {
+    container.innerHTML = '<div class="text-center py-5 text-muted"><i class="bi bi-file-earmark-x fs-1 d-block mb-2"></i>Nenhum documento encontrado.</div>';
+    return;
+  }
+
+  const badgeMap = {
+    processing: ['doc-badge-processing', 'bi-hourglass-split', 'Processando'],
+    created:    ['doc-badge-created',    'bi-clock-history',   'Aguardando Blockchain'],
+    validated:  ['doc-badge-validated',  'bi-patch-check-fill','Validado'],
+    error:      ['doc-badge-error',      'bi-x-octagon-fill',  'Erro'],
+  };
+
+  container.innerHTML = docs.map(doc => {
+    const [cls, icon, label] = badgeMap[doc.status] || badgeMap.error;
+    const data = new Date(doc.created_at).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    const epis = doc.epis.map(e => e.descricao).join(', ');
+
+    return `
+      <div class="card mb-3 border-0 shadow-sm rounded-3">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="fw-bold">Entrega #${doc.id}</div>
+              <div class="text-muted small">${data}</div>
+              <div class="text-muted small mt-1"><i class="bi bi-shield me-1"></i>${epis}</div>
+            </div>
+            <span class="badge ${cls} rounded-pill px-3 py-2">
+              <i class="bi ${icon} me-1"></i>${label}
+            </span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// UTILITÁRIOS
+// ═══════════════════════════════════════════════════════════════════════════
+function mostrarSucesso() {
+  document.getElementById('tela-principal').style.display = 'none';
+  document.getElementById('tela-sucesso').style.display = '';
+}
+
+function resetarTudo() {
+  selecionados = {};
+  fotoBlob = null;
+  document.getElementById('tela-sucesso').style.display = 'none';
+  document.getElementById('tela-principal').style.display = '';
+  document.querySelectorAll('[id^="qty-"]').forEach(el => el.textContent = '0');
+  atualizarCarrinho();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════════════
+carregarEpis();
+
+</script>
+</body>
+</html>

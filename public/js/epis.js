@@ -138,9 +138,9 @@ async function uploadImagem(inputId) {
     if (!input.files || !input.files[0]) return null;
 
     const formData = new FormData();
-    formData.append('file', input.files[0]);
+    formData.append('imagem', input.files[0]);
 
-    const response = await fetch(`${API_BASE}/upload`, {
+    const response = await fetch(`${API_BASE}/upload/publico`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
         body: formData

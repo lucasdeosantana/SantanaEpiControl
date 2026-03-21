@@ -18,26 +18,26 @@ const storagePublico = diskStorage({
 });
 
 // Storage para assinaturas (separado por ano/mês)
-const storageAssinatura = diskStorage({
-  destination: (req, file, cb) => {
-    const now = new Date();
-    const ano = now.getFullYear();
-    const mes = String(now.getMonth() + 1).padStart(2, '0'); // "03", "11", etc.
+// const storageAssinatura = diskStorage({
+//   destination: (req, file, cb) => {
+//     const now = new Date();
+//     const ano = now.getFullYear();
+//     const mes = String(now.getMonth() + 1).padStart(2, '0'); // "03", "11", etc.
 
-    const pasta = `./uploads/assinaturas/${ano}/${mes}`;
+//     const pasta = `./uploads/assinaturas/${ano}/${mes}`;
 
-    // Cria a pasta se não existir
-    if (!existsSync(pasta)) {
-      mkdirSync(pasta, { recursive: true });
-    }
+//     // Cria a pasta se não existir
+//     if (!existsSync(pasta)) {
+//       mkdirSync(pasta, { recursive: true });
+//     }
 
-    cb(null, pasta);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, `assinatura-${uniqueSuffix}${extname(file.originalname)}`);
-  },
-});
+//     cb(null, pasta);
+//   },
+//   filename: (req, file, cb) => {
+//     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+//     cb(null, `assinatura-${uniqueSuffix}${extname(file.originalname)}`);
+//   },
+// });
 
 @Controller('upload')
 @UseGuards(JwtAuthGuard)
@@ -49,23 +49,23 @@ export class UploadController {
     if (!file) throw new BadRequestException('Arquivo não enviado');
 
     return {
-      url: `/uploads/publicos/${file.filename}`,
+      url: `/images/${file.filename}`,
       storage: 'public',
     };
   }
 
-  @Post('assinatura')
-  @UseInterceptors(FileInterceptor('assinatura', { storage: storageAssinatura }))
-  uploadAssinatura(@UploadedFile() file: Express.Multer.File) {
-    if (!file) throw new BadRequestException('Arquivo não enviado');
+  // @Post('assinatura')
+  // @UseInterceptors(FileInterceptor('assinatura', { storage: storageAssinatura }))
+  // uploadAssinatura(@UploadedFile() file: Express.Multer.File) {
+  //   if (!file) throw new BadRequestException('Arquivo não enviado');
 
-    const now = new Date();
-    const ano = now.getFullYear();
-    const mes = String(now.getMonth() + 1).padStart(2, '0');
+  //   const now = new Date();
+  //   const ano = now.getFullYear();
+  //   const mes = String(now.getMonth() + 1).padStart(2, '0');
 
-    return {
-      path: `/uploads/assinaturas/${ano}/${mes}/${file.filename}`,
-      storage: 'private/signature',
-    };
-  }
+  //   return {
+  //     path: `/uploads/assinaturas/${ano}/${mes}/${file.filename}`,
+  //     storage: 'private/signature',
+  //   };
+  // }
 }

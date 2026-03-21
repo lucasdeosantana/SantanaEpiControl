@@ -422,6 +422,7 @@ id
 data
 hash_dia
 arquivo_timestamp
+
 ```
 
 ---
@@ -430,8 +431,13 @@ arquivo_timestamp
 
 ```
 id
-entrega_id
-arquivo_pdf
+epis_ids (multi to multi)
+arquivo_pdf (path)
+status (processing, validated, created, error)
+foto
+hash_foto
+arquivo_timestamp (path)
+hash_pdf
 created_at
 ```
 

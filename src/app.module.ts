@@ -14,7 +14,8 @@ import { DailyHashAudit } from './audit/daily-hash.entity';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { UploadModule } from './upload/upload.module';
-
+import { EntregasModule } from './entregas/entregas.module';
+import { Entrega } from './entregas/entrega.entity'
 
 @Module({
   imports: [
@@ -22,7 +23,7 @@ import { UploadModule } from './upload/upload.module';
     TypeOrmModule.forRoot({
       type: 'sqlite',
       database: 'database.sqlite',
-      entities: [User, Funcionario, Epi, AuditLog, DailyHashAudit],
+      entities: [User, Funcionario, Epi, AuditLog, DailyHashAudit, Entrega],
       synchronize: true,
     }),
     ServeStaticModule.forRoot({
@@ -32,7 +33,8 @@ import { UploadModule } from './upload/upload.module';
     FuncionariosModule,
     EpisModule,
     AuditModule,
-    UploadModule
+    UploadModule,
+    EntregasModule
   ],
 })
 export class AppModule {}

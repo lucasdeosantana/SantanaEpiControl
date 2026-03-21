@@ -68,12 +68,11 @@ async function carregarResumo() {
         ]);
 
         const logs = rLogs.ok ? await rLogs.json() : [];
-        const diarios = rDiarios.ok ? await rDiarios.json() : [];
+        //const diarios = rDiarios.ok ? await rDiarios.json() : [];
 
-        document.getElementById('totalLogs').textContent = logs.length ?? '—';
-        document.getElementById('totalDiarios').textContent = diarios.length ?? '—';
-
-        const usuarios = new Set(logs.map(l => l.usuario).filter(Boolean));
+        document.getElementById('totalLogs').textContent = logs["total"] ?? '—';
+        //document.getElementById('totalDiarios').textContent = diarios.length ?? '—';
+        const usuarios = new Set(logs["items"].map(l => l.usuario).filter(Boolean));
         document.getElementById('totalUsuarios').textContent = usuarios.size;
 
         // Verificar integridade da cadeia
@@ -115,13 +114,11 @@ function aplicarFiltros() {
     const usuario = document.getElementById('filtroUsuario').value.toLowerCase();
     const dataInicio = document.getElementById('filtroDataInicio').value;
     const dataFim = document.getElementById('filtroDataFim').value;
-
-    logsFiltrados = todosLogs.filter(log => {
+    logsFiltrados = todosLogs["items"].filter(log => {
         const matchBusca = !busca ||
             log.evento?.toLowerCase().includes(busca) ||
             log.usuario?.toLowerCase().includes(busca) ||
             JSON.stringify(log.dados || '').toLowerCase().includes(busca);
-
         const matchEvento = !evento || log.evento === evento;
         const matchUsuario = !usuario || log.usuario?.toLowerCase().includes(usuario);
 
@@ -131,7 +128,6 @@ function aplicarFiltros() {
 
         return matchBusca && matchEvento && matchUsuario && matchInicio && matchFim;
     });
-
     paginaLogs = 1;
     renderizarLogs();
 }
@@ -149,7 +145,6 @@ function renderizarLogs() {
     const tbody = document.getElementById('logsTableBody');
     const inicio = (paginaLogs - 1) * LOGS_POR_PAGINA;
     const pagina = logsFiltrados.slice(inicio, inicio + LOGS_POR_PAGINA);
-
     document.getElementById('infoRegistros').textContent =
         `Exibindo ${inicio + 1}–${Math.min(inicio + LOGS_POR_PAGINA, logsFiltrados.length)} de ${logsFiltrados.length} registros`;
 
@@ -162,7 +157,6 @@ function renderizarLogs() {
 
     // Verificar cadeia para marcar elos quebrados
     const cadeiaOk = mapearCadeia(todosLogs);
-
     tbody.innerHTML = pagina.map((log, idx) => {
         const i = inicio + idx;
         const ts = formatarData(log.timestamp);
@@ -170,7 +164,7 @@ function renderizarLogs() {
         const cadeiaValida = cadeiaOk[log.id] !== false;
         const hashAnt = log.hash_anterior || '—';
         const hashAtual = log.hash_atual || '—';
-
+        console.log("cheguei aqui")
         return `
         <tr class="${!cadeiaValida ? 'table-danger' : ''}" style="cursor:pointer;"
             onclick='abrirDetalhesLog(${JSON.stringify(log).replace(/'/g, "&#39;")}, ${cadeiaValida})'>
@@ -320,7 +314,6 @@ function renderizarHashesDiarios() {
         const integro = h.integro !== false;
         const dataRef = formatarDataSimples(h.data_referencia || h.data);
         const geradoEm = formatarData(h.created_at || h.gerado_em);
-
         return `
         <tr style="cursor:pointer;"
             onclick='abrirDetalhesDiario(${JSON.stringify(h).replace(/'/g, "&#39;")})'>
@@ -358,44 +351,44 @@ function renderizarHashesDiarios() {
     });
 }
 
-// =============================================
-// MODAL DETALHES HASH DIÁRIO
-// =============================================
-function abrirDetalhesDiario(h) {
-    hashDiarioSelecionado = h;
+// // =============================================
+// // MODAL DETALHES HASH DIÁRIO
+// // =============================================
+// function abrirDetalhesDiario(h) {
+//     hashDiarioSelecionado = h;
 
-    const dataRef = formatarDataSimples(h.data_referencia || h.data);
-    document.getElementById('ddData').textContent = dataRef;
-    document.getElementById('ddDataRef').textContent = dataRef;
-    document.getElementById('ddGeradoEm').textContent = formatarData(h.created_at || h.gerado_em);
-    document.getElementById('ddQtdLogs').textContent = h.quantidade_logs ?? '—';
-    document.getElementById('ddHash').textContent = h.hash || '—';
+//     const dataRef = formatarDataSimples(h.data_referencia || h.data);
+//     document.getElementById('ddData').textContent = dataRef;
+//     document.getElementById('ddDataRef').textContent = dataRef;
+//     document.getElementById('ddGeradoEm').textContent = formatarData(h.created_at || h.gerado_em);
+//     document.getElementById('ddQtdLogs').textContent = h.quantidade_logs ?? '—';
+//     document.getElementById('ddHash').textContent = h.hash || '—';
 
-    const integro = h.integro !== false;
-    document.getElementById('ddIntegridade').innerHTML = integro
-        ? '<span class="badge bg-success fs-6"><i class="bi bi-shield-check me-1"></i>Íntegro</span>'
-        : '<span class="badge bg-danger fs-6"><i class="bi bi-shield-x me-1"></i>Falha detectada</span>';
+//     const integro = h.integro !== false;
+//     document.getElementById('ddIntegridade').innerHTML = integro
+//         ? '<span class="badge bg-success fs-6"><i class="bi bi-shield-check me-1"></i>Íntegro</span>'
+//         : '<span class="badge bg-danger fs-6"><i class="bi bi-shield-x me-1"></i>Falha detectada</span>';
 
-    // Logs do dia (se a API retornar)
-    const listEl = document.getElementById('ddLogsList');
-    const container = document.getElementById('ddLogsContainer');
-    if (h.logs && h.logs.length > 0) {
-        container.classList.remove('d-none');
-        listEl.innerHTML = h.logs.map(l => `
-            <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-2">
-                <div>
-                    <span class="badge ${classeEvento(l.evento)} me-2">${l.evento}</span>
-                    <small class="text-muted">${formatarData(l.timestamp)}</small>
-                    <small class="ms-2">${l.usuario || ''}</small>
-                </div>
-                <span class="font-monospace small text-muted">${truncarHash(l.hash_atual)}</span>
-            </div>`).join('');
-    } else {
-        container.classList.add('d-none');
-    }
+//     // Logs do dia (se a API retornar)
+//     const listEl = document.getElementById('ddLogsList');
+//     const container = document.getElementById('ddLogsContainer');
+//     if (h.logs && h.logs.length > 0) {
+//         container.classList.remove('d-none');
+//         listEl.innerHTML = h.logs.map(l => `
+//             <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-2">
+//                 <div>
+//                     <span class="badge ${classeEvento(l.evento)} me-2">${l.evento}</span>
+//                     <small class="text-muted">${formatarData(l.timestamp)}</small>
+//                     <small class="ms-2">${l.usuario || ''}</small>
+//                 </div>
+//                 <span class="font-monospace small text-muted">${truncarHash(l.hash_atual)}</span>
+//             </div>`).join('');
+//     } else {
+//         container.classList.add('d-none');
+//     }
 
-    new bootstrap.Modal(document.getElementById('detalheDiarioModal')).show();
-}
+//     new bootstrap.Modal(document.getElementById('detalheDiarioModal')).show();
+// }
 
 async function verificarIntegridadeDia() {
     if (!hashDiarioSelecionado) return;
@@ -472,7 +465,7 @@ function copiarHashDiario() {
 // =============================================
 function verificarCadeia(logs) {
     if (!logs || logs.length === 0) return true;
-    const ordenados = [...logs].sort((a, b) => a.id - b.id);
+    const ordenados = [...logs["items"]].sort((a, b) => a.id - b.id);
     for (let i = 1; i < ordenados.length; i++) {
         if (ordenados[i].hash_anterior !== ordenados[i - 1].hash_atual) return false;
     }
@@ -481,8 +474,8 @@ function verificarCadeia(logs) {
 
 function mapearCadeia(logs) {
     const resultado = {};
-    if (!logs || logs.length === 0) return resultado;
-    const ordenados = [...logs].sort((a, b) => a.id - b.id);
+    if (!logs["items"] || logs["items"].length === 0) return resultado;
+    const ordenados = [...logs["items"]].sort((a, b) => a.id - b.id);
     resultado[ordenados[0].id] = true;
     for (let i = 1; i < ordenados.length; i++) {
         resultado[ordenados[i].id] =
