@@ -385,6 +385,7 @@
     const API_BASE = '/api';
     const TOKEN = () => localStorage.getItem('token'); // JWT salvo no localStorage
     let epi = [];
+ 
     // ═══════════════════════════════════════════════════════════════════════════
     // ESTADO
     // ═══════════════════════════════════════════════════════════════════════════
@@ -714,7 +715,7 @@
       container.innerHTML = '<div class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm me-2"></div> Carregando...</div>';
 
       try {
-        const res = await fetch(`${API_BASE}/entregas`, {
+        const res = await fetch(`${API_BASE}/entregas/funcionario/`, {
           headers: { Authorization: `Bearer ${TOKEN()}` }
         });
         const docs = await res.json();

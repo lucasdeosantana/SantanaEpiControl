@@ -5,7 +5,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const loginSpinner = document.getElementById('loginSpinner');
     const loginText = document.getElementById('loginText');
     const messageAlert = document.getElementById('messageAlert');
-    
+    const token = localStorage.getItem('token');
+    if (token) {
+        window.location.href = '/dashboard.html';
+        return;
+    }
     // Função para mostrar mensagem
     function showMessage(message, isSuccess = true) {
         messageAlert.classList.remove('d-none', 'alert-success', 'alert-danger');

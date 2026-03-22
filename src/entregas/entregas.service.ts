@@ -17,6 +17,11 @@ import { FaceDetectionService } from './services/face-detection.service';
 import { EntregaEpiItem } from './entrega-epi-item.entity'
 import { PaginationDto } from '../common/dto/pagination.dto'
 
+type User = {
+  userId: number;
+  username: string;
+  isAdmin: boolean;
+};
 // Defina uma interface para o retorno paginado (pode ser no mesmo arquivo ou num arquivo de tipos)
 export interface PaginatedEntregas {
   data: Entrega[];
@@ -44,92 +49,92 @@ export class EntregasService {
     private readonly auditService: AuditService,
     private readonly faceDetectionService: FaceDetectionService,
     private dataSource: DataSource,
-  ) {}
+  ) { }
 
-async create(
-  dto: CreateEntregaDto,
-  userName: string,
-  fotoBuffer: Buffer,
-  fotoOriginalName: string,
-): Promise<Entrega> {
-  // 1. Valida funcionário — IGUAL
-  const funcionario = await this.funcionariosRepository.findOne({
-    where: { id: dto.funcionario_id },
-  });
-  if (!funcionario) {
-    throw new NotFoundException(`Funcionário ${dto.funcionario_id} não encontrado`);
-  }
-
-  if(typeof(dto.itens)=="string") dto.itens = JSON.parse(dto.itens) 
-
-  // 2. Valida EPIs — ajuste para usar itens
-  const epiIds = dto.itens.map(i => i.epi_id);
-  const epis = await this.episRepository.findByIds(epiIds);
-  if (epis.length !== epiIds.length) {
-    throw new BadRequestException('Um ou mais EPIs não encontrados');
-  }
-
-  // 3. Processa foto — IGUAL
-  const { caminhoFoto, hashFoto } = await this.processarFoto(fotoBuffer, fotoOriginalName);
-
-  // 4. Detecta rosto — IGUAL
-  const temRosto = await this.faceDetectionService.detectarRostoHumano(caminhoFoto);
-  if (!temRosto) {
-    fs.unlinkSync(caminhoFoto);
-    throw new BadRequestException('Nenhum rosto humano detectado na foto de validação');
-  }
-
-  // 5. Cria entrega — só muda a montagem dos itens
-  return await this.dataSource.transaction(async (manager) => {
-    const itens = dto.itens.map(({ epi_id, quantidade }) => {
-      const epi = epis.find(e => e.id === epi_id);
-      return manager.create(EntregaEpiItem, { epi, quantidade });
+  async create(
+    dto: CreateEntregaDto,
+    user: User,
+    fotoBuffer: Buffer,
+    fotoOriginalName: string,
+  ): Promise<Entrega> {
+    // 1. Valida funcionário — IGUAL
+    const funcionario = await this.funcionariosRepository.findOne({
+      where: { id: user.userId },
     });
+    if (!funcionario) {
+      throw new NotFoundException(`Funcionário ${dto.funcionario_id} não encontrado`);
+    }
 
-    const entrega = manager.create(Entrega, {
-      funcionario,
-      user_name: userName,
-      itens,           // era: epis
-      status: 'processing',
-      foto: caminhoFoto,
-      hash_foto: hashFoto,
+    if (typeof (dto.itens) == "string") dto.itens = JSON.parse(dto.itens)
+
+    // 2. Valida EPIs — ajuste para usar itens
+    const epiIds = dto.itens.map(i => i.epi_id);
+    const epis = await this.episRepository.findByIds(epiIds);
+    if (epis.length !== epiIds.length) {
+      throw new BadRequestException('Um ou mais EPIs não encontrados');
+    }
+
+    // 3. Processa foto — IGUAL
+    const { caminhoFoto, hashFoto } = await this.processarFoto(fotoBuffer, fotoOriginalName);
+
+    // 4. Detecta rosto — IGUAL
+    const temRosto = await this.faceDetectionService.detectarRostoHumano(caminhoFoto);
+    if (!temRosto) {
+      fs.unlinkSync(caminhoFoto);
+      throw new BadRequestException('Nenhum rosto humano detectado na foto de validação');
+    }
+
+    // 5. Cria entrega — só muda a montagem dos itens
+    return await this.dataSource.transaction(async (manager) => {
+      const itens = dto.itens.map(({ epi_id, quantidade }) => {
+        const epi = epis.find(e => e.id === epi_id);
+        return manager.create(EntregaEpiItem, { epi, quantidade });
+      });
+
+      const entrega = manager.create(Entrega, {
+        funcionario,
+        itens,
+        user_name:user.username,          // era: epis
+        status: 'processing',
+        foto: caminhoFoto,
+        hash_foto: hashFoto,
+      });
+
+      const salva = await manager.save(entrega);
+
+      await this.auditService.createLog(
+        'entrega.criada',
+        { id: salva.id, funcionario_id: dto.funcionario_id, itens: dto.itens },
+        user.username,
+        manager,
+      );
+
+      return salva;
     });
-
-    const salva = await manager.save(entrega);
-
-    await this.auditService.createLog(
-      'entrega.criada',
-      { id: salva.id, funcionario_id: dto.funcionario_id, itens: dto.itens },
-      userName,
-      manager,
-    );
-
-    return salva;
-  });
-}
+  }
 
   async findAll(pagination: PaginationDto): Promise<PaginatedEntregas> {
-   const { page, limit } = pagination;
-  const skip = (page - 1) * limit;
+    const { page, limit } = pagination;
+    const skip = (page - 1) * limit;
 
-  const [data, total] = await this.entregasRepository.findAndCount({
-    order: { created_at: 'DESC' },
-    skip,
-    take: limit,
-    relations: ['funcionario', 'itens', 'itens.epi'],
-  });
+    const [data, total] = await this.entregasRepository.findAndCount({
+      order: { created_at: 'DESC' },
+      skip,
+      take: limit,
+      relations: ['funcionario', 'itens', 'itens.epi'],
+    });
 
-  return {
-    data,
-    meta: {
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-      hasNext: page < Math.ceil(total / limit),
-      hasPrev: page > 1,
-    },
-  };
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+        hasNext: page < Math.ceil(total / limit),
+        hasPrev: page > 1,
+      },
+    };
   }
 
   async findOne(id: number): Promise<Entrega> {

@@ -31,10 +31,9 @@ export class EntregasController {
     if (!foto) {
       throw new BadRequestException('Foto de validação é obrigatória');
     }
-
     return this.entregasService.create(
       dto,
-      req.user.username,
+      req.user,
       foto.buffer,
       foto.originalname,
     );
@@ -49,6 +48,10 @@ export class EntregasController {
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.entregasService.findOne(id);
   }
+  @Get('funcionario')
+  findtheFuncionario(@Request() req) {
+    return this.entregasService.findByFuncionario(req.user.userId);
+  }
 
   @Get('funcionario/:funcionarioId')
   findByFuncionario(@Param('funcionarioId', ParseIntPipe) funcionarioId: number) {
@@ -57,7 +60,7 @@ export class EntregasController {
   // -------------------------------------------------------
   // GET /entregas/:id/pdf/view  → serve o PDF inline
   // -------------------------------------------------------
-@Get(':id/pdf/view')
+  @Get(':id/pdf/view')
   async viewPdf(
     @Param('id', ParseIntPipe) id: number,
     @Res() res: ExpressResponse,
