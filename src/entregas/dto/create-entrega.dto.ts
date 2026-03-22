@@ -1,5 +1,5 @@
-import { IsArray, IsInt, IsNotEmpty } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsArray, IsInt, IsNotEmpty, IsString } from 'class-validator';
+import { Type, Transform } from 'class-transformer';
 
 export class CreateEntregaDto {
   @IsInt()
@@ -7,7 +7,8 @@ export class CreateEntregaDto {
   funcionario_id: number;
 
   @IsArray()
+  @IsString()
   @IsInt({ each: true })
   @Type(() => Number)
-  epis_ids: number[];
-}
+  itens: { epi_id: number; quantidade: number }[];
+} 

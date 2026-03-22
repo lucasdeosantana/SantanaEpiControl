@@ -16,6 +16,7 @@ import { join } from 'path';
 import { UploadModule } from './upload/upload.module';
 import { EntregasModule } from './entregas/entregas.module';
 import { Entrega } from './entregas/entrega.entity'
+import { EntregaEpiItem } from './entregas/entrega-epi-item.entity'
 
 @Module({
   imports: [
@@ -23,7 +24,7 @@ import { Entrega } from './entregas/entrega.entity'
     TypeOrmModule.forRoot({
       type: 'sqlite',
       database: 'database.sqlite',
-      entities: [User, Funcionario, Epi, AuditLog, DailyHashAudit, Entrega],
+      entities: [User, Funcionario, Epi, AuditLog, DailyHashAudit, Entrega, EntregaEpiItem],
       synchronize: true,
     }),
     ServeStaticModule.forRoot({

@@ -1,0 +1,726 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Comprovantes de Entrega</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <style>
+    body { background: #f4f6f9; }
+    .navbar { background: #1a1a2e !important; }
+    .navbar-brand, .nav-link, .navbar-text { color: #fff !important; }
+    .nav-link:hover { color: #adb5bd !important; }
+    .card { border: none; border-radius: 12px; }
+    .table-dark th { background: #1a1a2e !important; }
+    .badge-evento { font-size: 0.75rem; padding: 4px 8px; border-radius: 6px; }
+    .hash-cell { font-family: monospace; font-size: 0.75rem; color: #6c757d; }
+    .btn-icon { width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+    #pdfFrame { width: 100%; height: 100%; border: 0; }
+    .filtros-card .form-label { font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: #6c757d; margin-bottom: 4px; }
+    .metric-icon { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0; }
+    .table tbody tr:hover { background: #f8f9ff; }
+    .status-badge { font-size: 0.72rem; padding: 3px 8px; border-radius: 20px; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar navbar-expand-lg px-4 py-2 mb-4 shadow-sm">
+  <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="#">
+    <i class="bi bi-shield-check"></i> SantanaEpiControl
+  </a>
+  <div class="collapse navbar-collapse">
+    <ul class="navbar-nav me-auto gap-1">
+      <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a></li>
+      <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-people me-1"></i>Colaboradores</a></li>
+      <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-shield me-1"></i>EPIs</a></li>
+      <li class="nav-item"><a class="nav-link active fw-semibold" href="/logs.html"><i class="bi bi-file-earmark-text me-1"></i>Logs</a></li>
+    </ul>
+    <span class="navbar-text d-flex align-items-center gap-2">
+      <i class="bi bi-person-circle"></i>
+      <span id="navUsuario">Administrador</span>
+      <a href="#" class="btn btn-sm btn-outline-light ms-2" onclick="sair()">
+        <i class="bi bi-box-arrow-right me-1"></i>Sair
+      </a>
+    </span>
+  </div>
+</nav>
+
+<div class="container-fluid px-4">
+
+  <!-- HEADER -->
+  <div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+      <h3 class="mb-0 fw-bold d-flex align-items-center gap-2">
+        <i class="bi bi-file-earmark-text"></i> Comprovantes de Entrega
+      </h3>
+      <small class="text-muted">Histórico completo de entregas de EPIs registradas no sistema</small>
+    </div>
+    <span class="badge bg-dark fs-6 px-3 py-2">
+      <i class="bi bi-lock me-1"></i> Somente Leitura
+    </span>
+  </div>
+
+  <!-- CARDS MÉTRICAS -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="card shadow-sm h-100">
+        <div class="card-body d-flex align-items-center gap-3">
+          <div class="metric-icon bg-primary bg-opacity-10">
+            <i class="bi bi-file-earmark-text text-primary"></i>
+          </div>
+          <div>
+            <h4 id="cardTotal" class="mb-0 fw-bold">—</h4>
+            <small class="text-muted">Total de Entregas</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+      <div class="card shadow-sm h-100">
+        <div class="card-body d-flex align-items-center gap-3">
+          <div class="metric-icon bg-success bg-opacity-10">
+            <i class="bi bi-check-circle text-success"></i>
+          </div>
+          <div>
+            <h4 id="cardOk" class="mb-0 fw-bold">—</h4>
+            <small class="text-muted">Status OK</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+      <div class="card shadow-sm h-100">
+        <div class="card-body d-flex align-items-center gap-3">
+          <div class="metric-icon bg-warning bg-opacity-10">
+            <i class="bi bi-hourglass-split text-warning"></i>
+          </div>
+          <div>
+            <h4 id="cardProcessing" class="mb-0 fw-bold">—</h4>
+            <small class="text-muted">Processando</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+      <div class="card shadow-sm h-100">
+        <div class="card-body d-flex align-items-center gap-3">
+          <div class="metric-icon bg-danger bg-opacity-10">
+            <i class="bi bi-exclamation-triangle text-danger"></i>
+          </div>
+          <div>
+            <h4 id="cardErro" class="mb-0 fw-bold">—</h4>
+            <small class="text-muted">Com Erro</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILTROS -->
+  <div class="card shadow-sm mb-3 filtros-card">
+    <div class="card-body">
+      <div class="row g-2 align-items-end">
+
+        <div class="col-12 col-md-4">
+          <label class="form-label">Buscar Funcionário</label>
+          <div class="input-group">
+            <span class="input-group-text bg-white text-muted border-end-0">
+              <i class="bi bi-search"></i>
+            </span>
+            <input
+              id="buscaFuncionario"
+              class="form-control border-start-0 ps-0"
+              placeholder="Nome do funcionário..."
+              oninput="debouncedSearch()"
+            />
+            <button class="btn btn-outline-secondary" type="button" onclick="limparBusca()">
+              <i class="bi bi-x"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="col-6 col-md-2">
+          <label class="form-label">Status</label>
+          <select id="filtroStatus" class="form-select" onchange="carregarEntregas(1)">
+            <option value="">Todos</option>
+            <option value="created">Created</option>
+            <option value="processing">Processing</option>
+            <option value="error">Error</option>
+          </select>
+        </div>
+
+        <div class="col-6 col-md-2">
+          <label class="form-label">De</label>
+          <input type="date" id="dataInicio" class="form-control" onchange="carregarEntregas(1)">
+        </div>
+
+        <div class="col-6 col-md-2">
+          <label class="form-label">Até</label>
+          <input type="date" id="dataFim" class="form-control" onchange="carregarEntregas(1)">
+        </div>
+
+        <div class="col-6 col-md-1">
+          <label class="form-label">Por página</label>
+          <select id="limitSelect" class="form-select" onchange="carregarEntregas(1)">
+            <option value="10">10</option>
+            <option value="20" selected>20</option>
+            <option value="50">50</option>
+          </select>
+        </div>
+
+        <div class="col-12 col-md-1 d-grid">
+          <label class="form-label d-none d-md-block">&nbsp;</label>
+          <button class="btn btn-dark" onclick="limparFiltros()">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- TABELA -->
+  <div class="card shadow-sm">
+    <div class="table-responsive">
+      <table class="table align-middle mb-0">
+        <thead class="table-dark">
+          <tr>
+            <th style="width:60px">#</th>
+            <th style="width:160px">Data</th>
+            <th>Funcionário</th>
+            <th>Itens Entregues</th>
+            <th style="width:120px">Status</th>
+            <th style="width:120px">Usuário</th>
+            <th style="width:160px">Hash PDF</th>
+            <th style="width:100px" class="text-end">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyEntregas">
+          <tr>
+            <td colspan="8" class="text-center py-5 text-muted" id="loadingRow">
+              <div class="spinner-border spinner-border-sm me-2"></div>
+              Carregando entregas...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card-footer d-flex flex-wrap gap-2 justify-content-between align-items-center">
+      <small id="paginacaoInfo" class="text-muted"></small>
+      <div id="paginacaoBotoes" class="btn-group btn-group-sm"></div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<!-- MODAL VISUALIZADOR PDF -->
+<div class="modal fade" id="modalPdf" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h5 class="modal-title mb-0">
+            <i class="bi bi-file-earmark-pdf text-danger me-2"></i>Visualizador de Comprovante
+          </h5>
+          <small id="modalPdfSub" class="text-muted"></small>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" onclick="fecharPdf()"></button>
+      </div>
+
+      <div class="modal-body p-0" style="height:75vh">
+        <iframe id="pdfFrame" src="about:blank"></iframe>
+      </div>
+
+      <div class="modal-footer">
+        <a id="abrirNovaAba" class="btn btn-outline-secondary" href="#" target="_blank">
+          <i class="bi bi-box-arrow-up-right me-1"></i>Abrir em nova aba
+        </a>
+        <button type="button" class="btn btn-dark" data-bs-dismiss="modal" onclick="fecharPdf()">
+          Fechar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DETALHES ENTREGA -->
+<div class="modal fade" id="modalDetalhes" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="bi bi-info-circle me-2"></i>Detalhes da Entrega
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="modalDetalhesBody">
+        <!-- preenchido via JS -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // =============================================
+  // CONFIG — ajuste conforme seu ambiente
+  // =============================================
+  const API_BASE = 'http://localhost:3000/api';
+  function TOKEN() { return localStorage.getItem('token') || ''; }
+
+  // =============================================
+  // ESTADO
+  // =============================================
+  let currentPage = 1;
+  let currentMeta = null;
+  let debounceTimer = null;
+  let todasEntregas = []; // cache da página atual para os cards
+
+  // =============================================
+  // INIT
+  // =============================================
+  document.addEventListener('DOMContentLoaded', () => {
+    const usuario = localStorage.getItem('username') || 'Administrador do Sistema';
+    document.getElementById('navUsuario').textContent = usuario;
+    carregarEntregas(1);
+  });
+
+  function sair() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
+    window.location.href = '/login.html';
+  }
+
+  // =============================================
+  // FILTROS
+  // =============================================
+  function debouncedSearch() {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => carregarEntregas(1), 300);
+  }
+
+  function limparBusca() {
+    document.getElementById('buscaFuncionario').value = '';
+    carregarEntregas(1);
+  }
+
+  function limparFiltros() {
+    document.getElementById('buscaFuncionario').value = '';
+    document.getElementById('filtroStatus').value = '';
+    document.getElementById('dataInicio').value = '';
+    document.getElementById('dataFim').value = '';
+    carregarEntregas(1);
+  }
+
+  function getLimit() {
+    return Number(document.getElementById('limitSelect').value || 20);
+  }
+
+  // =============================================
+  // API
+  // =============================================
+  async function apiGet(url) {
+    const res = await fetch(url, {
+      headers: { 'Authorization': 'Bearer ' + TOKEN() }
+    });
+    if (res.status === 401) {
+      alert('Sessão expirada. Faça login novamente.');
+      sair();
+      return null;
+    }
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  }
+
+  async function carregarEntregas(page = 1) {
+    currentPage = page;
+
+    const tbody = document.getElementById('tbodyEntregas');
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" class="text-center py-5 text-muted">
+          <div class="spinner-border spinner-border-sm me-2"></div>
+          Carregando entregas...
+        </td>
+      </tr>`;
+
+    const params = new URLSearchParams();
+    params.set('page', String(page));
+    params.set('limit', String(getLimit()));
+
+    const busca = document.getElementById('buscaFuncionario').value.trim();
+    const status = document.getElementById('filtroStatus').value;
+    const dataInicio = document.getElementById('dataInicio').value;
+    const dataFim = document.getElementById('dataFim').value;
+
+    if (busca) params.set('funcionario', busca);
+    if (status) params.set('status', status);
+    if (dataInicio) params.set('dataInicio', dataInicio);
+    if (dataFim) params.set('dataFim', dataFim);
+
+    try {
+      const resp = await apiGet(API_BASE + '/entregas?' + params.toString());
+      if (!resp) return;
+
+      const data = Array.isArray(resp) ? resp : (resp.data || []);
+      const meta = resp.meta || null;
+
+      todasEntregas = data;
+      currentMeta = meta;
+
+      atualizarCards(data, meta);
+      renderizar(data, meta);
+    } catch (e) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" class="text-center py-5">
+            <div class="text-danger fw-semibold mb-2">
+              <i class="bi bi-exclamation-triangle me-2"></i>Erro ao carregar entregas
+            </div>
+            <pre class="small bg-white border rounded p-3 d-inline-block text-start" style="max-width:600px;white-space:pre-wrap">${escapeHtml(String(e.message || e))}</pre>
+          </td>
+        </tr>`;
+    }
+  }
+
+  // =============================================
+  // CARDS MÉTRICAS
+  // =============================================
+  function atualizarCards(data, meta) {
+    const total = meta ? meta.total : data.length;
+    const ok = data.filter(e => (e.status || '').toLowerCase() === 'created').length;
+    const processing = data.filter(e => (e.status || '').toLowerCase() === 'processing').length;
+    const erro = data.filter(e => (e.status || '').toLowerCase() === 'error').length;
+
+    document.getElementById('cardTotal').textContent = total;
+    document.getElementById('cardOk').textContent = ok;
+    document.getElementById('cardProcessing').textContent = processing;
+    document.getElementById('cardErro').textContent = erro;
+  }
+
+  // =============================================
+  // RENDERIZAR TABELA
+  // =============================================
+  function renderizar(entregas, meta) {
+    const tbody = document.getElementById('tbodyEntregas');
+    tbody.innerHTML = '';
+
+    if (!entregas || entregas.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" class="text-center py-5 text-muted">
+            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+            Nenhuma entrega encontrada.
+          </td>
+        </tr>`;
+      atualizarPaginacao(meta, 0);
+      return;
+    }
+
+    for (const ent of entregas) {
+      const funcionarioNome = ent?.funcionario?.nome || '—';
+      const funcionarioInfo = [
+        ent?.funcionario?.matricula ? 'Mat: ' + ent.funcionario.matricula : null,
+        ent?.funcionario?.setor || null,
+      ].filter(Boolean).join(' • ');
+
+      const itensResumo = resumoItens(ent.itens);
+      const statusBadge = badgeStatus(ent.status);
+      const hashPdf = ent.hash_pdf ? ent.hash_pdf.slice(0, 14) + '…' : '—';
+      const dataFmt = fmtData(ent.created_at);
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="text-muted fw-semibold">${ent.id}</td>
+
+        <td class="text-muted small">${escapeHtml(dataFmt)}</td>
+
+        <td>
+          <div class="fw-semibold">${escapeHtml(funcionarioNome)}</div>
+          <div class="text-muted small">${escapeHtml(funcionarioInfo)}</div>
+        </td>
+
+        <td style="max-width:280px">
+          <div class="small text-truncate" title="${escapeHtml(itensResumo)}">${escapeHtml(itensResumo)}</div>
+          <div class="text-muted" style="font-size:0.7rem">${ent.itens?.length || 0} tipo(s)</div>
+        </td>
+
+        <td>
+          <span class="status-badge bg-${statusBadge.bg} text-${statusBadge.text}">
+            ${escapeHtml(ent.status || '—')}
+          </span>
+          ${ent.erro_mensagem ? '<div class="text-danger small mt-1">' + escapeHtml(ent.erro_mensagem) + '</div>' : ''}
+        </td>
+
+        <td>
+          <span class="badge bg-secondary">
+            <i class="bi bi-person me-1"></i>${escapeHtml(ent.user_name || '—')}
+          </span>
+        </td>
+
+        <td class="hash-cell" title="${escapeHtml(ent.hash_pdf || '')}">
+          ${escapeHtml(hashPdf)}
+        </td>
+
+        <td class="text-end">
+          <div class="btn-group btn-group-sm">
+            <button
+              class="btn btn-outline-primary btn-icon"
+              title="Ver PDF"
+              onclick="verPdf(${ent.id})"
+            ><i class="bi bi-eye"></i></button>
+
+            <button
+              class="btn btn-outline-dark btn-icon"
+              title="Detalhes"
+              onclick="verDetalhes(${ent.id})"
+            ><i class="bi bi-info-circle"></i></button>
+
+            <button
+              class="btn btn-outline-secondary btn-icon"
+              title="Extrair ZIP"
+              onclick="extrairZip(${ent.id})"
+            ><i class="bi bi-file-zip"></i></button>
+          </div>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    }
+
+    atualizarPaginacao(meta, entregas.length);
+  }
+
+  // =============================================
+  // PAGINAÇÃO
+  // =============================================
+  function atualizarPaginacao(meta, countNaPagina) {
+    const info = document.getElementById('paginacaoInfo');
+    const wrap = document.getElementById('paginacaoBotoes');
+    wrap.innerHTML = '';
+
+    if (!meta) {
+      info.textContent = countNaPagina + ' resultado(s)';
+      return;
+    }
+
+    const { page, totalPages, total, limit, hasPrev, hasNext } = meta;
+    info.textContent = 'Exibindo ' + countNaPagina + ' de ' + total + ' • Página ' + page + ' de ' + totalPages;
+
+    const btnPrev = document.createElement('button');
+    btnPrev.className = 'btn btn-outline-secondary';
+    btnPrev.disabled = !hasPrev;
+    btnPrev.innerHTML = '<i class="bi bi-chevron-left"></i>';
+    btnPrev.onclick = () => carregarEntregas(page - 1);
+
+    const btnLabel = document.createElement('button');
+    btnLabel.className = 'btn btn-outline-secondary disabled';
+    btnLabel.textContent = page + ' / ' + totalPages;
+
+    const btnNext = document.createElement('button');
+    btnNext.className = 'btn btn-outline-secondary';
+    btnNext.disabled = !hasNext;
+    btnNext.innerHTML = '<i class="bi bi-chevron-right"></i>';
+    btnNext.onclick = () => carregarEntregas(page + 1);
+
+    wrap.appendChild(btnPrev);
+    wrap.appendChild(btnLabel);
+    wrap.appendChild(btnNext);
+  }
+
+  // =============================================
+  // AÇÕES
+  // =============================================
+  // Blob URL atual do PDF (revogado ao abrir novo)
+  let _pdfBlobUrl = null;
+
+  async function verPdf(entregaId) {
+    const btn = document.querySelector(`button[onclick="verPdf(${entregaId})"]`);
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>'; }
+
+    try {
+      const res = await fetch(API_BASE + '/entregas/' + entregaId + '/pdf/view', {
+        headers: { 'Authorization': 'Bearer ' + TOKEN() }
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ message: res.statusText }));
+        throw new Error(err.message || 'Erro ao carregar PDF');
+      }
+
+      const blob = await res.blob();
+
+      if (_pdfBlobUrl) URL.revokeObjectURL(_pdfBlobUrl);
+      _pdfBlobUrl = URL.createObjectURL(blob);
+
+      document.getElementById('pdfFrame').src = _pdfBlobUrl;
+      document.getElementById('abrirNovaAba').href = _pdfBlobUrl;
+      document.getElementById('modalPdfSub').textContent = 'Entrega #' + entregaId;
+
+      new bootstrap.Modal(document.getElementById('modalPdf')).show();
+
+    } catch (e) {
+      alert('Erro ao abrir PDF: ' + e.message);
+    } finally {
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-eye"></i>'; }
+    }
+  }
+
+  function fecharPdf() {
+    document.getElementById('pdfFrame').src = 'about:blank';
+    // blob não é revogado aqui para manter o link "abrir em nova aba" ativo
+  }
+
+  function verDetalhes(entregaId) {
+    const ent = todasEntregas.find(e => e.id === entregaId);
+    if (!ent) return;
+
+    const body = document.getElementById('modalDetalhesBody');
+    const itensHtml = (ent.itens || []).map(i => `
+      <tr>
+        <td>${escapeHtml(i?.epi?.codigo || '—')}</td>
+        <td>${escapeHtml(i?.epi?.descricao || '—')}</td>
+        <td>${escapeHtml(i?.epi?.tipo || '—')}</td>
+        <td>${escapeHtml(i?.epi?.fabricante || '—')}</td>
+        <td class="text-center fw-bold">${i?.quantidade ?? 1}</td>
+      </tr>
+    `).join('');
+
+    body.innerHTML = `
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <div class="card bg-light border-0">
+            <div class="card-body">
+              <h6 class="fw-bold mb-3"><i class="bi bi-person me-2"></i>Funcionário</h6>
+              <table class="table table-sm table-borderless mb-0">
+                <tr><td class="text-muted">Nome</td><td class="fw-semibold">${escapeHtml(ent?.funcionario?.nome || '—')}</td></tr>
+                <tr><td class="text-muted">CPF</td><td>${escapeHtml(ent?.funcionario?.cpf || '—')}</td></tr>
+                <tr><td class="text-muted">Matrícula</td><td>${escapeHtml(ent?.funcionario?.matricula || '—')}</td></tr>
+                <tr><td class="text-muted">Setor</td><td>${escapeHtml(ent?.funcionario?.setor || '—')}</td></tr>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card bg-light border-0">
+            <div class="card-body">
+              <h6 class="fw-bold mb-3"><i class="bi bi-info-circle me-2"></i>Entrega</h6>
+              <table class="table table-sm table-borderless mb-0">
+                <tr><td class="text-muted">ID</td><td class="fw-semibold">#${ent.id}</td></tr>
+                <tr><td class="text-muted">Data</td><td>${escapeHtml(fmtData(ent.created_at))}</td></tr>
+                <tr><td class="text-muted">Registrado por</td><td>${escapeHtml(ent.user_name || '—')}</td></tr>
+                <tr><td class="text-muted">Status</td><td><span class="badge bg-${badgeStatus(ent.status).bg}">${escapeHtml(ent.status || '—')}</span></td></tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h6 class="fw-bold mb-2"><i class="bi bi-shield me-2"></i>EPIs Entregues</h6>
+      <div class="table-responsive mb-3">
+        <table class="table table-sm table-bordered align-middle">
+          <thead class="table-dark">
+            <tr>
+              <th>Código</th><th>Descrição</th><th>Tipo</th><th>Fabricante</th><th class="text-center">Qtd</th>
+            </tr>
+          </thead>
+          <tbody>${itensHtml || '<tr><td colspan="5" class="text-center text-muted">Nenhum item</td></tr>'}</tbody>
+        </table>
+      </div>
+
+      <h6 class="fw-bold mb-2"><i class="bi bi-shield-lock me-2"></i>Integridade</h6>
+      <div class="bg-light rounded p-3">
+        <div class="row g-2">
+          <div class="col-12">
+            <small class="text-muted d-block">Hash Foto</small>
+            <code class="small">${escapeHtml(ent.hash_foto || '—')}</code>
+          </div>
+          <div class="col-12">
+            <small class="text-muted d-block">Hash PDF</small>
+            <code class="small">${escapeHtml(ent.hash_pdf || '—')}</code>
+          </div>
+        </div>
+      </div>
+    `;
+
+    new bootstrap.Modal(document.getElementById('modalDetalhes')).show();
+  }
+
+  async function extrairZip(entregaId) {
+    const btn = document.querySelector(`button[onclick="extrairZip(${entregaId})"]`);
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>'; }
+
+    try {
+      const res = await fetch(API_BASE + '/entregas/' + entregaId + '/extrair', {
+        headers: { 'Authorization': 'Bearer ' + TOKEN() }
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ message: res.statusText }));
+        throw new Error(err.message || 'Erro ao gerar ZIP');
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'entrega-' + entregaId + '.zip';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+
+    } catch (e) {
+      alert('Erro ao extrair ZIP: ' + e.message);
+    } finally {
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-file-zip"></i>'; }
+    }
+  }
+
+  // =============================================
+  // HELPERS
+  // =============================================
+  function fmtData(iso) {
+    if (!iso) return '—';
+    try { return new Date(iso).toLocaleString('pt-BR'); }
+    catch { return iso; }
+  }
+
+  function resumoItens(itens) {
+    if (!Array.isArray(itens) || itens.length === 0) return '—';
+    return itens.map(i => {
+      const desc = i?.epi?.descricao || i?.epi?.codigo || 'EPI';
+      const qtd = i?.quantidade ?? 1;
+      return desc + ' (x' + qtd + ')';
+    }).join(', ');
+  }
+
+  function badgeStatus(status) {
+    const s = (status || '').toLowerCase();
+    if (s === 'created') return { bg: 'success', text: 'white' };
+    if (s === 'processing') return { bg: 'warning', text: 'dark' };
+    if (s === 'error' || s === 'failed') return { bg: 'danger', text: 'white' };
+    return { bg: 'secondary', text: 'white' };
+  }
+
+  function escapeHtml(str) {
+    return String(str ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+  }
+</script>
+</body>
+</html>

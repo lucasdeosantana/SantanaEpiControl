@@ -1,9 +1,9 @@
 import {
   Entity, PrimaryGeneratedColumn, Column, CreateDateColumn,
-  ManyToOne, ManyToMany, JoinTable, JoinColumn,
+  ManyToOne, OneToMany, JoinTable, JoinColumn,
 } from 'typeorm';
 import { Funcionario } from '../funcionarios/funcionario.entity';
-import { Epi } from '../epis/epi.entity';
+import { EntregaEpiItem } from './entrega-epi-item.entity'
 
 export type EntregaStatus = 'processing' | 'created' | 'validated' | 'error';
 
@@ -19,13 +19,8 @@ export class Entrega {
   @Column()
   user_name: string;
 
-  @ManyToMany(() => Epi, { eager: true })
-  @JoinTable({
-    name: 'entregas_epis',
-    joinColumn: { name: 'entrega_id' },
-    inverseJoinColumn: { name: 'epi_id' },
-  })
-  epis: Epi[];
+  @OneToMany(() => EntregaEpiItem, item => item.entrega, { cascade: true, eager: true })
+  itens: EntregaEpiItem[];
 
   @Column({ nullable: true })
   arquivo_pdf: string;

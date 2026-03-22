@@ -93,16 +93,17 @@ export class PdfService {
     doc.fontSize(13).text('EPIs Entregues', { underline: true });
     doc.moveDown(0.3);
 
-    if (!entrega.epis?.length) {
+    if (!entrega.itens.length) {
       doc.fontSize(12).text('- (nenhum EPI na entrega)');
     } else {
-      entrega.epis.forEach((epi, idx) => {
-        // Ajuste conforme seus campos do Epi: descricao, ca, fabricante, tipo
+      entrega.itens.forEach((epi, idx) => {
+        //Ajuste conforme seus campos do Epi: descricao, ca, fabricante, tipo
         const linha =
-          `${idx + 1}. ${epi.descricao}` +
-          (epi.ca ? ` | CA: ${epi.ca}` : '') +
-          (epi.fabricante ? ` | Fab: ${epi.fabricante}` : '') +
-          (epi.tipo ? ` | Tipo: ${epi.tipo}` : '');
+          `${idx + 1}. ${epi.epi.descricao}` +
+          (epi.epi.ca ? ` | CA: ${epi.epi.ca}` : '') +
+          (epi.epi.fabricante ? ` | Fab: ${epi.epi.fabricante}` : '') +
+          (epi.epi.tipo ? ` | Tipo: ${epi.epi.tipo}` : '')+
+          (epi.quantidade? ` | Qtd: ${epi.quantidade}`: '');
 
         doc.fontSize(11).text(linha);
       });

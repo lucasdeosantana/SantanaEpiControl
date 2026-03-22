@@ -14,6 +14,21 @@ import { Funcionario } from '../funcionarios/funcionario.entity';
 import { Epi } from '../epis/epi.entity';
 import { AuditService } from '../audit/audit.service';
 import { FaceDetectionService } from './services/face-detection.service';
+import { EntregaEpiItem } from './entrega-epi-item.entity'
+import { PaginationDto } from '../common/dto/pagination.dto'
+
+// Defina uma interface para o retorno paginado (pode ser no mesmo arquivo ou num arquivo de tipos)
+export interface PaginatedEntregas {
+  data: Entrega[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+}
 
 @Injectable()
 export class EntregasService {
@@ -31,63 +46,90 @@ export class EntregasService {
     private dataSource: DataSource,
   ) {}
 
-  async create(
-    dto: CreateEntregaDto,
-    userName: string,
-    fotoBuffer: Buffer,
-    fotoOriginalName: string,
-  ): Promise<Entrega> {
-    // 1. Valida funcionário
-    const funcionario = await this.funcionariosRepository.findOne({
-      where: { id: dto.funcionario_id },
-    });
-    if (!funcionario) {
-      throw new NotFoundException(`Funcionário ${dto.funcionario_id} não encontrado`);
-    }
-
-    // 2. Valida EPIs
-    const epis = await this.episRepository.findByIds(dto.epis_ids);
-    if (epis.length !== dto.epis_ids.length) {
-      throw new BadRequestException('Um ou mais EPIs não encontrados');
-    }
-
-    // 3. Processa e salva a foto (600x600, JPEG)
-    const { caminhoFoto, hashFoto } = await this.processarFoto(fotoBuffer, fotoOriginalName);
-
-    // 4. Detecta rosto humano na foto
-    const temRosto = await this.faceDetectionService.detectarRostoHumano(caminhoFoto);
-    if (!temRosto) {
-      // Remove a foto salva antes de lançar o erro
-      fs.unlinkSync(caminhoFoto);
-      throw new BadRequestException('Nenhum rosto humano detectado na foto de validação');
-    }
-
-    // 5. Cria a entrega no banco com status "processing" — tudo atômico
-    return await this.dataSource.transaction(async (manager) => {
-      const entrega = manager.create(Entrega, {
-        funcionario,
-        user_name: userName,
-        epis,
-        status: 'processing',
-        foto: caminhoFoto,
-        hash_foto: hashFoto,
-      });
-
-      const salva = await manager.save(entrega);
-
-      await this.auditService.createLog(
-        'entrega.criada',
-        { id: salva.id, funcionario_id: dto.funcionario_id, epis_ids: dto.epis_ids },
-        userName,
-        manager,
-      );
-
-      return salva;
-    });
+async create(
+  dto: CreateEntregaDto,
+  userName: string,
+  fotoBuffer: Buffer,
+  fotoOriginalName: string,
+): Promise<Entrega> {
+  // 1. Valida funcionário — IGUAL
+  const funcionario = await this.funcionariosRepository.findOne({
+    where: { id: dto.funcionario_id },
+  });
+  if (!funcionario) {
+    throw new NotFoundException(`Funcionário ${dto.funcionario_id} não encontrado`);
   }
 
-  async findAll(): Promise<Entrega[]> {
-    return this.entregasRepository.find({ order: { created_at: 'DESC' } });
+  if(typeof(dto.itens)=="string") dto.itens = JSON.parse(dto.itens) 
+
+  // 2. Valida EPIs — ajuste para usar itens
+  const epiIds = dto.itens.map(i => i.epi_id);
+  const epis = await this.episRepository.findByIds(epiIds);
+  if (epis.length !== epiIds.length) {
+    throw new BadRequestException('Um ou mais EPIs não encontrados');
+  }
+
+  // 3. Processa foto — IGUAL
+  const { caminhoFoto, hashFoto } = await this.processarFoto(fotoBuffer, fotoOriginalName);
+
+  // 4. Detecta rosto — IGUAL
+  const temRosto = await this.faceDetectionService.detectarRostoHumano(caminhoFoto);
+  if (!temRosto) {
+    fs.unlinkSync(caminhoFoto);
+    throw new BadRequestException('Nenhum rosto humano detectado na foto de validação');
+  }
+
+  // 5. Cria entrega — só muda a montagem dos itens
+  return await this.dataSource.transaction(async (manager) => {
+    const itens = dto.itens.map(({ epi_id, quantidade }) => {
+      const epi = epis.find(e => e.id === epi_id);
+      return manager.create(EntregaEpiItem, { epi, quantidade });
+    });
+
+    const entrega = manager.create(Entrega, {
+      funcionario,
+      user_name: userName,
+      itens,           // era: epis
+      status: 'processing',
+      foto: caminhoFoto,
+      hash_foto: hashFoto,
+    });
+
+    const salva = await manager.save(entrega);
+
+    await this.auditService.createLog(
+      'entrega.criada',
+      { id: salva.id, funcionario_id: dto.funcionario_id, itens: dto.itens },
+      userName,
+      manager,
+    );
+
+    return salva;
+  });
+}
+
+  async findAll(pagination: PaginationDto): Promise<PaginatedEntregas> {
+   const { page, limit } = pagination;
+  const skip = (page - 1) * limit;
+
+  const [data, total] = await this.entregasRepository.findAndCount({
+    order: { created_at: 'DESC' },
+    skip,
+    take: limit,
+    relations: ['funcionario', 'itens', 'itens.epi'],
+  });
+
+  return {
+    data,
+    meta: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+      hasNext: page < Math.ceil(total / limit),
+      hasPrev: page > 1,
+    },
+  };
   }
 
   async findOne(id: number): Promise<Entrega> {

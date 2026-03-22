@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', function() {
     window.navigateTo = function(page) {
         switch(page) {
             case 'retirada':
-                alert('Página de Retirada de EPI em desenvolvimento');
+                window.location.href = '/entrega-epi.html';
                 break;
             case 'colaboradores':
                 window.location.href = '/cadastro-colaboradores.html';
@@ -33,8 +33,8 @@ document.addEventListener('DOMContentLoaded', function() {
             case 'epis':
                 window.location.href = '/cadastro-epis.html';
                 break;
-            case 'comprovantes':
-                alert('Página de Consulta de Comprovantes em desenvolvimento');
+                case 'comprovantes':
+                    window.location.href = '/comprovantes.html';
                 break;
             case 'logs':
                 window.location.href = '/logs.html';
