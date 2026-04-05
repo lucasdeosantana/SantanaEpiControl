@@ -684,7 +684,6 @@
         quantidade: item.quantidade
       }));
       // Ajuste o funcionario_id conforme seu contexto de autenticação
-      formData.append('funcionario_id', '1');
       formData.append('itens', JSON.stringify(itensPayload));
       formData.append('foto', fotoBlob, 'validacao.jpg');
       console.log(formData.values())
@@ -715,11 +714,10 @@
       container.innerHTML = '<div class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm me-2"></div> Carregando...</div>';
 
       try {
-        const res = await fetch(`${API_BASE}/entregas/funcionario/`, {
+        const res = await fetch(`${API_BASE}/entregas/func/2`, {
           headers: { Authorization: `Bearer ${TOKEN()}` }
         });
         const docs = await res.json();
-        console.log(docs)
         renderizarDocumentos(docs);
       } catch (e) {
         console.log(e)

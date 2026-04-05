@@ -48,7 +48,7 @@ export class EntregasController {
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.entregasService.findOne(id);
   }
-  @Get('funcionario')
+  @Get('func/:id')
   findtheFuncionario(@Request() req) {
     return this.entregasService.findByFuncionario(req.user.userId);
   }
